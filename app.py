@@ -55,34 +55,34 @@ class Overlay:
         # Use Tesseract to extract text bounding boxes
         try:
             data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-            print(f"Extracted data: {data}")  # Debug statement
             return data
         except Exception as e:
             print(f"Error extracting text boxes: {e}")
             return None
 
-    def highlight_text_under_cursor(self, data, cursor_x, cursor_y, region):
+    def highlight_text_under_cursor(self, image, data, cursor_x, cursor_y, region):
         region_x, region_y, _, _ = region
         cursor_relative_x = cursor_x - region_x
         cursor_relative_y = cursor_y - region_y  # Y-coordinate in the image
 
         highlighted_text = ""
 
+        draw = ImageDraw.Draw(image)
         for i in range(len(data['text'])):
             if data['text'][i].strip():
                 x1, y1, width, height = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
                 x2, y2 = x1 + width, y1 + height
 
                 if x1 <= cursor_relative_x <= x2 and y1 <= cursor_relative_y <= y2:
+                    draw.rectangle(((x1, y1), (x2, y2)), outline="red", width=2)
                     highlighted_text = data['text'][i]
                     break
 
-        print(f"Highlighted text: {highlighted_text}")  # Debug statement
         return highlighted_text
 
     def on_click(self, x, y, button, pressed):
         if pressed:
-            print(f"Mouse clicked at ({x}, {y})")  # Debug statement
+            print(f"Mouse clicked at ({x}, {y})")
             self.process_click(x, y)
 
     def process_click(self, x, y):
@@ -102,7 +102,7 @@ class Overlay:
 
         region = (left, top, right, bottom)
 
-        print(f"Capturing region: {region}")  # Debug info
+        print(f"Capturing region: {region}")
 
         # Capture the screen region
         screen = self.capture_screen(region)
@@ -112,12 +112,12 @@ class Overlay:
 
         # Highlight the text under the cursor and store the highlighted text
         if data:
-            self.current_highlighted_text = self.highlight_text_under_cursor(data, x, y, region)
+            self.current_highlighted_text = self.highlight_text_under_cursor(screen, data, x, y, region)
         else:
             self.current_highlighted_text = ""
 
         if self.current_highlighted_text:
-            print(f"Storing text: {self.current_highlighted_text}")  # Debug statement
+            print(f"Storing text: {self.current_highlighted_text}")
             self.target_input_box.delete(0, tk.END)
             self.target_input_box.insert(0, self.current_highlighted_text)
 
@@ -149,7 +149,7 @@ class Overlay:
 
             region = (left, top, right, bottom)
 
-            print(f"Capturing region: {region}")  # Debug info
+            print(f"Capturing region: {region}")
 
             # Capture the screen region
             screen = self.capture_screen(region)
@@ -159,15 +159,22 @@ class Overlay:
 
             # Highlight the text under the cursor and store the highlighted text
             if data:
-                self.current_highlighted_text = self.highlight_text_under_cursor(data, x, y, region)
+                self.current_highlighted_text = self.highlight_text_under_cursor(screen, data, x, y, region)
             else:
                 self.current_highlighted_text = ""
+
+            # Display the updated image in the Tkinter window
+            self.display_image(screen)
 
             # Schedule the next update
             self.root.after(100, self.update_overlay)
         except Exception as e:
             print(f"Exception in update_overlay: {e}")
             self.root.after(100, self.update_overlay)
+
+    def display_image(self, image):
+        self.img = ImageTk.PhotoImage(image)
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.img)
 
 # Create the main window
 root = tk.Tk()
