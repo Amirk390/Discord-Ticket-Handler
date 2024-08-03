@@ -12,7 +12,7 @@ class Overlay:
     def __init__(self, root):
         self.root = root
         self.root.title("Text Picker")
-        self.root.geometry("400x400")
+        self.root.geometry("400x500")
         self.root.configure(bg='white')
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
 
@@ -25,13 +25,14 @@ class Overlay:
 
         # Input boxes with labels
         self.input_boxes = {}
-        labels = ["User Name", "Reason", "Ban Time", "Ticket ID"]
+        self.current_box_index = 0
+        self.labels = ["User Name", "Reason", "Ban Time", "Ticket ID"]
         
-        for label in labels:
+        for label in self.labels:
             self.create_labeled_input(label)
 
         # Add a stop button
-        self.stop_button = tk.Button(root, text="Stop", command=self.stop_script, bg='red', fg='white')
+        self.stop_button = tk.Button(root, text="Stop", command=self.toggle_script, bg='red', fg='white')
         self.stop_button.pack(pady=5)
 
         self.stored_text = ""
@@ -46,14 +47,14 @@ class Overlay:
         self.update_overlay()
 
     def create_labeled_input(self, label_text):
-        label = tk.Label(self.root, text=label_text, bg='white', font=("Helvetica", 10))
+        label = tk.Label(self.root, text=label_text, bg='white', font=("Helvetica", 10, "bold"))
         label.pack()
 
         frame = tk.Frame(self.root, bg='white')
-        frame.pack(pady=(5, 15))  # Add padding between input boxes
+        frame.pack(pady=(5, 10))  # Reduce padding between input boxes
 
         entry_var = tk.StringVar()
-        entry = tk.Entry(frame, textvariable=entry_var, bg='#424242', fg='white', font=("Helvetica", 12), width=25)
+        entry = tk.Entry(frame, textvariable=entry_var, bg='#424242', fg='white', font=("Helvetica", 12, "bold"), width=25)
         entry.pack()
 
         self.input_boxes[label_text] = entry
@@ -91,11 +92,15 @@ class Overlay:
         return highlighted_text
 
     def on_click(self, x, y, button, pressed):
-        if pressed:
+        if pressed and self.running:
             print(f"Mouse clicked at ({x, y})")
             self.process_click(x, y)
 
     def process_click(self, x, y):
+        if self.current_box_index >= len(self.labels):
+            print("All input boxes are filled.")
+            return
+        
         width, height = 200, 100  # Preset size of the region
         screen_width, screen_height = pyautogui.size()
         
@@ -128,13 +133,17 @@ class Overlay:
 
         if self.current_highlighted_text:
             print(f"Storing text: {self.current_highlighted_text}")
-            self.input_boxes["User Name"].delete(0, tk.END)
-            self.input_boxes["User Name"].insert(0, self.current_highlighted_text)
+            current_label = self.labels[self.current_box_index]
+            self.input_boxes[current_label].delete(0, tk.END)
+            self.input_boxes[current_label].insert(0, self.current_highlighted_text)
+            self.current_box_index += 1
 
-    def stop_script(self):
-        self.running = False
-        self.listener.stop()
-        self.root.destroy()
+    def toggle_script(self):
+        self.running = not self.running
+        if self.running:
+            self.stop_button.config(text="Stop", bg='red')
+        else:
+            self.stop_button.config(text="Start", bg='green')
 
     def update_overlay(self):
         if not self.running:
