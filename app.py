@@ -123,9 +123,13 @@ class Overlay:
         self.update_ban_time_input()
 
     def update_ban_time_input(self, *args):
-        ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
+        if self.ban_time_unit_var.get() == "Perm":
+            ban_time_text = "Perm"
+        else:
+            ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
         self.input_boxes["Ban Time"].delete(0, tk.END)
         self.input_boxes["Ban Time"].insert(0, ban_time_text)
+        self.update_big_box()
 
     def center_align_text(self, text, width):
         if len(text) >= width:
@@ -138,6 +142,7 @@ class Overlay:
         centered_text = self.center_align_text(text, width)
         self.input_boxes[label_text].delete(0, tk.END)
         self.input_boxes[label_text].insert(0, centered_text)
+        self.update_big_box()
 
     def reset(self):
         # Clear all input boxes and reset index
@@ -237,9 +242,6 @@ class Overlay:
 
     def update_big_box(self):
         concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
-        if self.input_boxes["Ban Time"].get().strip() == "":
-            ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
-            concatenated_text = concatenated_text.replace("\nBan Time", f"\n{ban_time_text}\nBan Time")
         self.big_input_box.delete(1.0, tk.END)
         self.big_input_box.insert(tk.END, concatenated_text)
         pyperclip.copy(concatenated_text)
