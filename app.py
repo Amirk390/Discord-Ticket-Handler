@@ -58,6 +58,16 @@ class Overlay:
 
         self.current_highlighted_text = ""
 
+        # Buttons under the big box
+        self.lookup_buttons_frame = tk.Frame(self.container, bg='white')
+        self.lookup_buttons_frame.pack(pady=(5, 20))
+
+        self.past_punishments_button = tk.Button(self.lookup_buttons_frame, text="Past punishments Lookup", bg='#ffd67f', fg='black', command=self.past_punishments_lookup)
+        self.past_punishments_button.pack(side=tk.LEFT, padx=20)
+
+        self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server-logs lookup", bg='#ffd67f', fg='black', command=self.server_logs_lookup)
+        self.server_logs_button.pack(side=tk.LEFT, padx=20)
+
         # Start the global mouse listener
         self.listener = mouse.Listener(on_click=self.on_click)
         self.listener.start()
@@ -196,6 +206,18 @@ class Overlay:
             self.stop_button.config(text="Stop", bg='red')
         else:
             self.stop_button.config(text="Start", bg='green')
+
+    def past_punishments_lookup(self):
+        user_name = self.input_boxes["User Name"].get().strip()
+        lookup_text = f"in:#punishment-request {user_name}"
+        pyperclip.copy(lookup_text)
+        print(lookup_text)
+
+    def server_logs_lookup(self):
+        user_name = self.input_boxes["User Name"].get().strip()
+        lookup_text = f"in:#server-logs-shack {user_name}"
+        pyperclip.copy(lookup_text)
+        print(lookup_text)
 
     def update_overlay(self):
         if not self.running:
