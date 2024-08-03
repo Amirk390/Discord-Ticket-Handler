@@ -12,23 +12,23 @@ class Overlay:
     def __init__(self, root):
         self.root = root
         self.root.title("Text Picker")
-        self.root.geometry("400x200")
+        self.root.geometry("400x400")
         self.root.configure(bg='white')
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
 
         # Title and description
         self.title_label = tk.Label(root, text="Text Picker", bg='white', font=("Helvetica", 16, "bold"))
-        self.title_label.pack()
+        self.title_label.pack(pady=(10, 0))  # Add padding to the top
 
         self.description_label = tk.Label(root, text="Click on the information (text) you want to pick", bg='white', font=("Helvetica", 10))
-        self.description_label.pack()
+        self.description_label.pack(pady=(0, 20))  # Add padding to the bottom
 
-        # Input box for selected text
-        self.selected_text_var = tk.StringVar()
-        self.input_box_frame = tk.Frame(root, bg='white')
-        self.input_box_frame.pack(pady=10)
-        self.input_box = tk.Entry(self.input_box_frame, textvariable=self.selected_text_var, bg='#424242', fg='white', font=("Helvetica", 12), width=25)
-        self.input_box.pack()
+        # Input boxes with labels
+        self.input_boxes = {}
+        labels = ["User Name", "Reason", "Ban Time", "Ticket ID"]
+        
+        for label in labels:
+            self.create_labeled_input(label)
 
         # Add a stop button
         self.stop_button = tk.Button(root, text="Stop", command=self.stop_script, bg='red', fg='white')
@@ -36,7 +36,6 @@ class Overlay:
 
         self.stored_text = ""
         self.running = True
-        self.target_input_box = self.input_box
 
         self.current_highlighted_text = ""
 
@@ -45,6 +44,19 @@ class Overlay:
         self.listener.start()
 
         self.update_overlay()
+
+    def create_labeled_input(self, label_text):
+        label = tk.Label(self.root, text=label_text, bg='white', font=("Helvetica", 10))
+        label.pack()
+
+        frame = tk.Frame(self.root, bg='white')
+        frame.pack(pady=(5, 15))  # Add padding between input boxes
+
+        entry_var = tk.StringVar()
+        entry = tk.Entry(frame, textvariable=entry_var, bg='#424242', fg='white', font=("Helvetica", 12), width=25)
+        entry.pack()
+
+        self.input_boxes[label_text] = entry
 
     def capture_screen(self, region):
         # Capture the screen or a region of the screen
@@ -60,21 +72,19 @@ class Overlay:
             print(f"Error extracting text boxes: {e}")
             return None
 
-    def highlight_text_under_cursor(self, image, data, cursor_x, cursor_y, region):
+    def highlight_text_under_cursor(self, data, cursor_x, cursor_y, region):
         region_x, region_y, _, _ = region
         cursor_relative_x = cursor_x - region_x
         cursor_relative_y = cursor_y - region_y  # Y-coordinate in the image
 
         highlighted_text = ""
 
-        draw = ImageDraw.Draw(image)
         for i in range(len(data['text'])):
             if data['text'][i].strip():
                 x1, y1, width, height = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
                 x2, y2 = x1 + width, y1 + height
 
                 if x1 <= cursor_relative_x <= x2 and y1 <= cursor_relative_y <= y2:
-                    draw.rectangle(((x1, y1), (x2, y2)), outline="red", width=2)
                     highlighted_text = data['text'][i]
                     break
 
@@ -82,7 +92,7 @@ class Overlay:
 
     def on_click(self, x, y, button, pressed):
         if pressed:
-            print(f"Mouse clicked at ({x}, {y})")
+            print(f"Mouse clicked at ({x, y})")
             self.process_click(x, y)
 
     def process_click(self, x, y):
@@ -112,14 +122,14 @@ class Overlay:
 
         # Highlight the text under the cursor and store the highlighted text
         if data:
-            self.current_highlighted_text = self.highlight_text_under_cursor(screen, data, x, y, region)
+            self.current_highlighted_text = self.highlight_text_under_cursor(data, x, y, region)
         else:
             self.current_highlighted_text = ""
 
         if self.current_highlighted_text:
             print(f"Storing text: {self.current_highlighted_text}")
-            self.target_input_box.delete(0, tk.END)
-            self.target_input_box.insert(0, self.current_highlighted_text)
+            self.input_boxes["User Name"].delete(0, tk.END)
+            self.input_boxes["User Name"].insert(0, self.current_highlighted_text)
 
     def stop_script(self):
         self.running = False
@@ -159,22 +169,15 @@ class Overlay:
 
             # Highlight the text under the cursor and store the highlighted text
             if data:
-                self.current_highlighted_text = self.highlight_text_under_cursor(screen, data, x, y, region)
+                self.current_highlighted_text = self.highlight_text_under_cursor(data, x, y, region)
             else:
                 self.current_highlighted_text = ""
-
-            # Display the updated image in the Tkinter window
-            self.display_image(screen)
 
             # Schedule the next update
             self.root.after(100, self.update_overlay)
         except Exception as e:
             print(f"Exception in update_overlay: {e}")
             self.root.after(100, self.update_overlay)
-
-    def display_image(self, image):
-        self.img = ImageTk.PhotoImage(image)
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.img)
 
 # Create the main window
 root = tk.Tk()
