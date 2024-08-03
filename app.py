@@ -2,10 +2,8 @@ import pytesseract
 from PIL import ImageGrab, Image, ImageDraw, ImageTk
 import pyautogui
 import tkinter as tk
-import win32api
-import win32gui
-import win32con
-import sys
+import threading
+from pynput import mouse
 
 # Configure pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -14,22 +12,23 @@ class Overlay:
     def __init__(self, root):
         self.root = root
         self.root.title("Text Picker")
-        self.root.geometry("400x200")
+        self.root.geometry("400x400")
         self.root.configure(bg='white')
+        self.root.attributes("-topmost", True)  # Ensure the window stays on top
 
         # Title and description
         self.title_label = tk.Label(root, text="Text Picker", bg='white', font=("Helvetica", 16, "bold"))
-        self.title_label.pack()
+        self.title_label.pack(pady=(10, 0))  # Add padding to the top
 
         self.description_label = tk.Label(root, text="Click on the information (text) you want to pick", bg='white', font=("Helvetica", 10))
-        self.description_label.pack()
+        self.description_label.pack(pady=(0, 20))  # Add padding to the bottom
 
-        # Input box for selected text
-        self.selected_text_var = tk.StringVar()
-        self.input_box_frame = tk.Frame(root, bg='white')
-        self.input_box_frame.pack(pady=10)
-        self.input_box = tk.Entry(self.input_box_frame, textvariable=self.selected_text_var, bg='#424242', fg='white', font=("Helvetica", 12), width=25)
-        self.input_box.pack()
+        # Input boxes with labels
+        self.input_boxes = {}
+        labels = ["User Name", "Reason", "Ban Time", "Ticket ID"]
+        
+        for label in labels:
+            self.create_labeled_input(label)
 
         # Add a stop button
         self.stop_button = tk.Button(root, text="Stop", command=self.stop_script, bg='red', fg='white')
@@ -37,12 +36,27 @@ class Overlay:
 
         self.stored_text = ""
         self.running = True
-        self.target_input_box = self.input_box
 
-        # Bind mouse click event
-        self.root.bind("<Button-1>", self.store_text)
+        self.current_highlighted_text = ""
+
+        # Start the global mouse listener
+        self.listener = mouse.Listener(on_click=self.on_click)
+        self.listener.start()
 
         self.update_overlay()
+
+    def create_labeled_input(self, label_text):
+        label = tk.Label(self.root, text=label_text, bg='white', font=("Helvetica", 10))
+        label.pack()
+
+        frame = tk.Frame(self.root, bg='white')
+        frame.pack(pady=(5, 15))  # Add padding between input boxes
+
+        entry_var = tk.StringVar()
+        entry = tk.Entry(frame, textvariable=entry_var, bg='#424242', fg='white', font=("Helvetica", 12), width=25)
+        entry.pack()
+
+        self.input_boxes[label_text] = entry
 
     def capture_screen(self, region):
         # Capture the screen or a region of the screen
@@ -53,7 +67,6 @@ class Overlay:
         # Use Tesseract to extract text bounding boxes
         try:
             data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-            print(f"Extracted data: {data}")  # Debug statement
             return data
         except Exception as e:
             print(f"Error extracting text boxes: {e}")
@@ -75,17 +88,52 @@ class Overlay:
                     highlighted_text = data['text'][i]
                     break
 
-        print(f"Highlighted text: {highlighted_text}")  # Debug statement
         return highlighted_text
 
-    def store_text(self, event):
+    def on_click(self, x, y, button, pressed):
+        if pressed:
+            print(f"Mouse clicked at ({x, y})")
+            self.process_click(x, y)
+
+    def process_click(self, x, y):
+        width, height = 200, 100  # Preset size of the region
+        screen_width, screen_height = pyautogui.size()
+        
+        # Ensure the region is within the screen bounds and has valid dimensions
+        left = max(0, x - width // 2)
+        top = max(0, y - height // 2)
+        right = min(screen_width, x + width // 2)
+        bottom = min(screen_height, y + height // 2)
+
+        # Ensure the region has a positive width and height
+        if right <= left or bottom <= top:
+            print("Invalid region dimensions")
+            return
+
+        region = (left, top, right, bottom)
+
+        print(f"Capturing region: {region}")
+
+        # Capture the screen region
+        screen = self.capture_screen(region)
+
+        # Extract text bounding boxes from the captured image
+        data = self.extract_text_boxes_from_image(screen)
+
+        # Highlight the text under the cursor and store the highlighted text
+        if data:
+            self.current_highlighted_text = self.highlight_text_under_cursor(data, x, y, region)
+        else:
+            self.current_highlighted_text = ""
+
         if self.current_highlighted_text:
-            print(f"Storing text: {self.current_highlighted_text}")  # Debug statement
-            self.target_input_box.delete(0, tk.END)
-            self.target_input_box.insert(0, self.current_highlighted_text)
+            print(f"Storing text: {self.current_highlighted_text}")
+            self.input_boxes["User Name"].delete(0, tk.END)
+            self.input_boxes["User Name"].insert(0, self.current_highlighted_text)
 
     def stop_script(self):
         self.running = False
+        self.listener.stop()
         self.root.destroy()
 
     def update_overlay(self):
@@ -111,7 +159,7 @@ class Overlay:
 
             region = (left, top, right, bottom)
 
-            print(f"Capturing region: {region}")  # Debug info
+            print(f"Capturing region: {region}")
 
             # Capture the screen region
             screen = self.capture_screen(region)
