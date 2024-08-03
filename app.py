@@ -12,7 +12,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 class Overlay:
     def __init__(self, root):
         self.root = root
-        self.root.title("Text Picker")
+        self.root.title("Purple RP Ticket Handler")
         self.root.geometry("500x800")  # Adjusted to fit the layout
         self.root.configure(bg='white')
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
@@ -22,7 +22,7 @@ class Overlay:
         self.container.pack(expand=True, fill=tk.BOTH)
 
         # Title and description
-        self.title_label = tk.Label(self.container, text="Text Picker", bg='white', font=("Helvetica", 16, "bold"))
+        self.title_label = tk.Label(self.container, text="Purple RP Ticket Handler", bg='white', font=("Helvetica", 16, "bold"))
         self.title_label.pack(pady=(10, 0))
 
         self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick", bg='white', font=("Helvetica", 10))
@@ -73,6 +73,10 @@ class Overlay:
 
         self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server-logs lookup", bg='#ffd67f', fg='black', command=self.server_logs_lookup)
         self.server_logs_button.pack(side=tk.LEFT, padx=20)
+
+        # Footer text
+        self.footer_label = tk.Label(self.container, text="This program has been created by TotalStrike for Purple RP community", bg='white', font=("Helvetica", 8), anchor='s')
+        self.footer_label.pack(side=tk.BOTTOM, pady=(0, 10))
 
         # Start the global mouse listener
         self.listener = mouse.Listener(on_click=self.on_click)
@@ -144,6 +148,7 @@ class Overlay:
         self.running = True
         self.stop_button.config(text="Stop", bg='red')
         self.stop_button.config(state=tk.NORMAL)
+        self.update_ban_time_input()
 
     def capture_screen(self, region):
         try:
@@ -323,4 +328,3 @@ overlay = Overlay(root)
 
 # Run the GUI event loop
 root.mainloop()
-
