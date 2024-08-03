@@ -2,6 +2,7 @@ import pytesseract
 from PIL import ImageGrab, Image
 import pyautogui
 import tkinter as tk
+from tkinter import ttk
 import pyperclip
 from pynput import mouse
 
@@ -12,7 +13,7 @@ class Overlay:
     def __init__(self, root):
         self.root = root
         self.root.title("Text Picker")
-        self.root.geometry("500x700")  # Adjusted to fit the layout
+        self.root.geometry("500x800")  # Adjusted to fit the layout
         self.root.configure(bg='white')
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
 
@@ -37,6 +38,11 @@ class Overlay:
 
         for label in self.labels:
             self.create_labeled_input(label)
+
+        # Add Ban Time options
+        self.ban_time_frame = tk.Frame(self.input_frame, bg='white')
+        self.ban_time_frame.pack(pady=(5, 10))
+        self.create_ban_time_options()
 
         # Add control buttons
         self.buttons_frame = tk.Frame(self.container, bg='white')
@@ -83,6 +89,36 @@ class Overlay:
         entry.pack(pady=(5, 10))
 
         self.input_boxes[label_text] = entry
+
+    def create_ban_time_options(self):
+        self.ban_time_label = tk.Label(self.ban_time_frame, text="", bg='white', font=("Helvetica", 10, "bold"))
+        self.ban_time_label.pack(side=tk.LEFT)
+
+        self.ban_time_value_var = tk.StringVar()
+        self.ban_time_value_var.set("1")
+        self.ban_time_value_menu = ttk.Combobox(self.ban_time_frame, textvariable=self.ban_time_value_var, values=["1", "2", "3", "4", "5", "6", "7"], width=5)
+        self.ban_time_value_menu.pack(side=tk.LEFT, padx=5)
+
+        self.ban_time_unit_var = tk.StringVar()
+        self.ban_time_unit_var.set("Days")
+        self.ban_time_unit_menu = ttk.Combobox(self.ban_time_frame, textvariable=self.ban_time_unit_var, values=["Days", "Weeks", "Month", "Perm"], width=10)
+        self.ban_time_unit_menu.pack(side=tk.LEFT, padx=5)
+
+        self.ban_time_unit_var.trace("w", self.on_ban_time_unit_change)
+
+    def on_ban_time_unit_change(self, *args):
+        if self.ban_time_unit_var.get() == "Perm":
+            self.ban_time_value_menu.config(state=tk.DISABLED)
+        else:
+            self.ban_time_value_menu.config(state=tk.NORMAL)
+
+        # Update Ban Time input box with selected values
+        self.update_ban_time_input()
+
+    def update_ban_time_input(self):
+        ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
+        self.input_boxes["Ban Time"].delete(0, tk.END)
+        self.input_boxes["Ban Time"].insert(0, ban_time_text)
 
     def center_align_text(self, text, width):
         if len(text) >= width:
@@ -180,7 +216,10 @@ class Overlay:
             print(f"Storing text: {self.current_highlighted_text}")
             current_label = self.labels[self.current_box_index]
             self.update_input_box(current_label, self.current_highlighted_text)
-            self.current_box_index += 1
+            if self.current_box_index == 1:
+                self.current_box_index += 2  # Skip Ban Time
+            else:
+                self.current_box_index += 1
 
             if self.current_box_index >= len(self.labels):
                 self.running = False
@@ -206,18 +245,6 @@ class Overlay:
             self.stop_button.config(text="Stop", bg='red')
         else:
             self.stop_button.config(text="Start", bg='green')
-
-    def past_punishments_lookup(self):
-        user_name = self.input_boxes["User Name"].get().strip()
-        lookup_text = f"in:#punishment-request {user_name}"
-        pyperclip.copy(lookup_text)
-        print(lookup_text)
-
-    def server_logs_lookup(self):
-        user_name = self.input_boxes["User Name"].get().strip()
-        lookup_text = f"in:#server-logs-shack {user_name}"
-        pyperclip.copy(lookup_text)
-        print(lookup_text)
 
     def update_overlay(self):
         if not self.running:
@@ -258,6 +285,20 @@ class Overlay:
         except Exception as e:
             print(f"Exception in update_overlay: {e}")
             self.root.after(100, self.update_overlay)
+
+    def past_punishments_lookup(self):
+        user_name = self.input_boxes[self.labels[0]].get().strip()
+        result = f"in:#punishment-request {user_name}"
+        self.big_input_box.delete(1.0, tk.END)
+        self.big_input_box.insert(tk.END, result)
+        pyperclip.copy(result)
+
+    def server_logs_lookup(self):
+        user_name = self.input_boxes[self.labels[0]].get().strip()
+        result = f"in:#server-logs-shack {user_name}"
+        self.big_input_box.delete(1.0, tk.END)
+        self.big_input_box.insert(tk.END, result)
+        pyperclip.copy(result)
 
 # Create the main window
 root = tk.Tk()
