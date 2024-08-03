@@ -88,21 +88,24 @@ class Overlay:
         entry = tk.Entry(self.input_frame, textvariable=entry_var, bg='#424242', fg='white', font=("Helvetica", 12, "bold"), width=25, justify='center')
         entry.pack(pady=(5, 10))
 
+        entry.bind("<Button-1>", self.on_entry_click)
         self.input_boxes[label_text] = entry
 
     def create_ban_time_options(self):
-        self.ban_time_label = tk.Label(self.ban_time_frame, text="", bg='white', font=("Helvetica", 10, "bold"))
+        self.ban_time_label = tk.Label(self.ban_time_frame, text="Ban Time", bg='white', font=("Helvetica", 10, "bold"))
         self.ban_time_label.pack(side=tk.LEFT)
 
         self.ban_time_value_var = tk.StringVar()
         self.ban_time_value_var.set("1")
         self.ban_time_value_menu = ttk.Combobox(self.ban_time_frame, textvariable=self.ban_time_value_var, values=["1", "2", "3", "4", "5", "6", "7"], width=5)
         self.ban_time_value_menu.pack(side=tk.LEFT, padx=5)
+        self.ban_time_value_menu.bind("<<ComboboxSelected>>", self.update_ban_time_input)
 
         self.ban_time_unit_var = tk.StringVar()
         self.ban_time_unit_var.set("Days")
         self.ban_time_unit_menu = ttk.Combobox(self.ban_time_frame, textvariable=self.ban_time_unit_var, values=["Days", "Weeks", "Month", "Perm"], width=10)
         self.ban_time_unit_menu.pack(side=tk.LEFT, padx=5)
+        self.ban_time_unit_menu.bind("<<ComboboxSelected>>", self.update_ban_time_input)
 
         self.ban_time_unit_var.trace("w", self.on_ban_time_unit_change)
 
@@ -115,7 +118,7 @@ class Overlay:
         # Update Ban Time input box with selected values
         self.update_ban_time_input()
 
-    def update_ban_time_input(self):
+    def update_ban_time_input(self, *args):
         ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
         self.input_boxes["Ban Time"].delete(0, tk.END)
         self.input_boxes["Ban Time"].insert(0, ban_time_text)
@@ -184,6 +187,7 @@ class Overlay:
     def process_click(self, x, y):
         if self.current_box_index >= len(self.labels):
             print("All input boxes are filled.")
+            self.stop_button.config(text="Refresh", bg='green')
             return
         
         width, height = 200, 100
@@ -223,12 +227,20 @@ class Overlay:
 
             if self.current_box_index >= len(self.labels):
                 self.running = False
-                self.stop_button.config(text="Copy", bg='green')
-                self.stop_button.config(state=tk.NORMAL)
+                self.stop_button.config(text="Refresh", bg='green')
+                self.update_big_box()
+
+    def update_big_box(self):
+        concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
+        if self.input_boxes["Ban Time"].get().strip() == "":
+            ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
+            concatenated_text = concatenated_text.replace("\nBan Time", f"\n{ban_time_text}\nBan Time")
+        self.big_input_box.delete(1.0, tk.END)
+        self.big_input_box.insert(tk.END, concatenated_text)
+        pyperclip.copy(concatenated_text)
 
     def copy_to_clipboard(self):
-        # Concatenate texts from all input boxes
-        concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels)
+        concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
         self.big_input_box.delete(1.0, tk.END)
         self.big_input_box.insert(tk.END, concatenated_text + "\n")
         pyperclip.copy(concatenated_text)  # Copy the concatenated text to the clipboard
@@ -236,8 +248,6 @@ class Overlay:
     def toggle_script(self):
         if self.current_box_index >= len(self.labels):
             self.copy_to_clipboard()
-            self.stop_button.config(text="Stop", bg='red')
-            self.stop_button.config(state=tk.NORMAL)
             return
 
         self.running = not self.running
@@ -299,6 +309,13 @@ class Overlay:
         self.big_input_box.delete(1.0, tk.END)
         self.big_input_box.insert(tk.END, result)
         pyperclip.copy(result)
+
+    def on_entry_click(self, event):
+        widget = event.widget
+        for label, entry in self.input_boxes.items():
+            if entry == widget:
+                self.current_box_index = self.labels.index(label)
+                break
 
 # Create the main window
 root = tk.Tk()
