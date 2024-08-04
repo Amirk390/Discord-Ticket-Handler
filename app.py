@@ -52,8 +52,8 @@ class Overlay:
         self.buttons_frame = tk.Frame(self.container, bg='#641d77')
         self.buttons_frame.pack(pady=(5, 10))
 
-        self.stop_button = tk.Button(self.buttons_frame, text="Stop", command=self.toggle_script, bg='red', fg='white')
-        self.stop_button.pack(side=tk.LEFT, padx=10)
+        self.refresh_button = tk.Button(self.buttons_frame, text="Refresh", command=self.update_big_box, bg='green', fg='white')
+        self.refresh_button.pack(side=tk.LEFT, padx=10)
 
         self.reset_button = tk.Button(self.buttons_frame, text="Reset", command=self.reset, bg='blue', fg='white')
         self.reset_button.pack(side=tk.LEFT, padx=10)
@@ -148,8 +148,6 @@ class Overlay:
         self.big_input_box.delete(1.0, tk.END)
         self.current_box_index = 0
         self.running = True
-        self.stop_button.config(text="Stop", bg='red')
-        self.stop_button.config(state=tk.NORMAL)
         self.ban_time_value_var.set("")
         self.ban_time_unit_var.set("")
 
@@ -195,7 +193,6 @@ class Overlay:
     def process_click(self, x, y):
         if self.current_box_index >= len(self.labels):
             print("All input boxes are filled.")
-            self.stop_button.config(text="Refresh", bg='green')
             return
         
         width, height = 200, 100
@@ -243,7 +240,6 @@ class Overlay:
 
             if self.current_box_index >= len(self.labels):
                 self.running = False
-                self.stop_button.config(text="Refresh", bg='green')
                 self.update_big_box()
 
     def update_big_box(self):
@@ -262,17 +258,6 @@ class Overlay:
         self.big_input_box.delete(1.0, tk.END)
         self.big_input_box.insert(tk.END, concatenated_text + "\n")
         pyperclip.copy(concatenated_text)  # Copy the concatenated text to the clipboard
-
-    def toggle_script(self):
-        if self.current_box_index >= len(self.labels):
-            self.copy_to_clipboard()
-            return
-
-        self.running = not self.running
-        if self.running:
-            self.stop_button.config(text="Stop", bg='red')
-        else:
-            self.stop_button.config(text="Start", bg='green')
 
     def update_overlay(self):
         if not self.running:
