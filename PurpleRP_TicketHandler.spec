@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\user\\Downloads\\purplerp.ico'],
+    icon=['C:\\Users\\user\\Downloads\\DiscordTicketHandler\\app\\purplerp.ico'],
 )

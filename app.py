@@ -13,7 +13,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 class Overlay:
     def __init__(self, root):
         self.root = root
-        self.root.title("Purple RP Ticket Handler")
+        self.root.title("Purple RP Ticket Assistant")
         self.root.geometry("500x800")  # Adjusted to fit the layout
         self.root.configure(bg='#641d77')
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
@@ -26,7 +26,7 @@ class Overlay:
         self.container.pack(expand=True, fill=tk.BOTH)
 
         # Title and description
-        self.title_label = tk.Label(self.container, text="Purple RP Ticket Handler", bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
+        self.title_label = tk.Label(self.container, text="Purple RP Ticket Assistant", bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
         self.title_label.pack(pady=(10, 0))
 
         self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick", bg='#641d77', fg='white', font=("Helvetica", 10))
@@ -52,7 +52,7 @@ class Overlay:
         self.buttons_frame = tk.Frame(self.container, bg='#641d77')
         self.buttons_frame.pack(pady=(5, 10))
 
-        self.refresh_button = tk.Button(self.buttons_frame, text="Refresh", command=self.update_big_box, bg='green', fg='white')
+        self.refresh_button = tk.Button(self.buttons_frame, text="Refresh", command=self.copy_to_clipboard, bg='green', fg='white')
         self.refresh_button.pack(side=tk.LEFT, padx=10)
 
         self.reset_button = tk.Button(self.buttons_frame, text="Reset", command=self.reset, bg='blue', fg='white')
@@ -78,12 +78,17 @@ class Overlay:
         self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server logs lookup", bg='#4a1a77', fg='white', command=self.server_logs_lookup)
         self.server_logs_button.pack(side=tk.LEFT, padx=20)
 
+        # Image
+        self.image = tk.PhotoImage(file=r'C:\Users\user\Downloads\DiscordTicketHandler\app\image.png')
+        self.image_label = tk.Label(self.container, image=self.image, bg='#641d77')
+        self.image_label.pack(pady=(20, 0))
+
         # Footer text
         self.footer_label = tk.Label(self.container, text="This program has been created by TotalStrike for Purple RP community", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
         self.footer_label.pack(side=tk.BOTTOM, pady=(10, 0))
 
         # Version text
-        self.version_label = tk.Label(self.container, text="Version 1.0", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
+        self.version_label = tk.Label(self.container, text="Version 2.00365b", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
         self.version_label.pack(side=tk.BOTTOM, pady=(0, 10))
 
         # Start the global mouse listener
@@ -193,11 +198,14 @@ class Overlay:
     def process_click(self, x, y):
         if self.current_box_index >= len(self.labels):
             print("All input boxes are filled.")
+            self.running = False
+            self.refresh_button.config(state=tk.NORMAL)
+            self.update_big_box()
             return
-        
+
         width, height = 200, 100
         screen_width, screen_height = pyautogui.size()
-        
+
         left = max(0, x - width // 2)
         top = max(0, y - height // 2)
         right = min(screen_width, x + width // 2)
@@ -225,7 +233,6 @@ class Overlay:
             print(f"Storing text: {self.current_highlighted_text}")
             current_label = self.labels[self.current_box_index]
             if current_label == "Ticket ID":
-                # Only store numbers in the Ticket ID input box
                 numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
                 if numeric_text:
                     self.current_highlighted_text = numeric_text
@@ -240,6 +247,7 @@ class Overlay:
 
             if self.current_box_index >= len(self.labels):
                 self.running = False
+                self.refresh_button.config(state=tk.NORMAL)
                 self.update_big_box()
 
     def update_big_box(self):
@@ -268,7 +276,7 @@ class Overlay:
             x, y = pyautogui.position()
             width, height = 200, 100
             screen_width, screen_height = pyautogui.size()
-            
+
             left = max(0, x - width // 2)
             top = max(0, y - height // 2)
             right = min(screen_width, x + width // 2)
