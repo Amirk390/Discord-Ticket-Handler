@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 import pyperclip
 from pynput import mouse
+import re
 
 # Configure pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -79,10 +80,11 @@ class Overlay:
 
         # Footer text
         self.footer_label = tk.Label(self.container, text="This program has been created by TotalStrike for Purple RP community", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
-        self.footer_label.pack(side=tk.BOTTOM, pady=(0, 10))
+        self.footer_label.pack(side=tk.BOTTOM, pady=(10, 0))
 
-        self.version_label = tk.Label(self.container, text="Version 1.0", bg='#641d77', fg='white', font=("Helvetica", 8))
-        self.version_label.pack(side=tk.BOTTOM, pady=(0, 5))
+        # Version text
+        self.version_label = tk.Label(self.container, text="Version 1.0", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
+        self.version_label.pack(side=tk.BOTTOM, pady=(0, 10))
 
         # Start the global mouse listener
         self.listener = mouse.Listener(on_click=self.on_click)
@@ -225,11 +227,19 @@ class Overlay:
         if self.current_highlighted_text:
             print(f"Storing text: {self.current_highlighted_text}")
             current_label = self.labels[self.current_box_index]
-            self.update_input_box(current_label, self.current_highlighted_text)
-            if self.current_box_index == 1:
-                self.current_box_index += 2  # Skip Ban Time
+            if current_label == "Ticket ID":
+                # Only store numbers in the Ticket ID input box
+                numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
+                if numeric_text:
+                    self.current_highlighted_text = numeric_text
+                    self.update_input_box(current_label, self.current_highlighted_text)
+                    self.current_box_index += 1
             else:
-                self.current_box_index += 1
+                self.update_input_box(current_label, self.current_highlighted_text)
+                if self.current_box_index == 1:
+                    self.current_box_index += 2  # Skip Ban Time
+                else:
+                    self.current_box_index += 1
 
             if self.current_box_index >= len(self.labels):
                 self.running = False
@@ -266,7 +276,7 @@ class Overlay:
 
     def update_overlay(self):
         if not self.running:
-            self.root.after(100, self.update_overlay)
+            self.root.after(200, self.update_overlay)
             return
 
         try:
@@ -281,7 +291,7 @@ class Overlay:
 
             if right <= left or bottom <= top:
                 print("Invalid region dimensions")
-                self.root.after(100, self.update_overlay)
+                self.root.after(200, self.update_overlay)
                 return
 
             region = (left, top, right, bottom)
@@ -290,7 +300,7 @@ class Overlay:
 
             screen = self.capture_screen(region)
             if screen is None:
-                self.root.after(100, self.update_overlay)
+                self.root.after(200, self.update_overlay)
                 return
 
             data = self.extract_text_boxes_from_image(screen)
@@ -299,10 +309,10 @@ class Overlay:
             else:
                 self.current_highlighted_text = ""
 
-            self.root.after(100, self.update_overlay)
+            self.root.after(200, self.update_overlay)
         except Exception as e:
             print(f"Exception in update_overlay: {e}")
-            self.root.after(100, self.update_overlay)
+            self.root.after(200, self.update_overlay)
 
     def past_punishments_lookup(self):
         user_name = self.input_boxes[self.labels[0]].get().strip()
