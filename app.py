@@ -34,8 +34,8 @@ class Overlay:
 
         # Input boxes with labels
         self.input_boxes = {}
-        self.current_box_index = 0
         self.labels = ["User Name", "Reason", "Ban Time", "Ticket ID"]
+        self.manual_click_index = None
 
         self.input_frame = tk.Frame(self.container, bg='#641d77')
         self.input_frame.pack(pady=(5, 10))
@@ -151,7 +151,7 @@ class Overlay:
         for label in self.labels:
             self.input_boxes[label].delete(0, tk.END)
         self.big_input_box.delete(1.0, tk.END)
-        self.current_box_index = 0
+        self.manual_click_index = None
         self.running = True
         self.ban_time_value_var.set("")
         self.ban_time_unit_var.set("")
@@ -196,13 +196,6 @@ class Overlay:
             self.process_click(x, y)
 
     def process_click(self, x, y):
-        if self.current_box_index >= len(self.labels):
-            print("All input boxes are filled.")
-            self.running = False
-            self.refresh_button.config(state=tk.NORMAL)
-            self.update_big_box()
-            return
-
         width, height = 200, 100
         screen_width, screen_height = pyautogui.size()
 
@@ -231,24 +224,31 @@ class Overlay:
 
         if self.current_highlighted_text:
             print(f"Storing text: {self.current_highlighted_text}")
-            current_label = self.labels[self.current_box_index]
-            if current_label == "Ticket ID":
-                numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
-                if numeric_text:
-                    self.current_highlighted_text = numeric_text
-                    self.update_input_box(current_label, self.current_highlighted_text)
-                    self.current_box_index += 1
-            else:
-                self.update_input_box(current_label, self.current_highlighted_text)
-                if self.current_box_index == 1:
-                    self.current_box_index += 2  # Skip Ban Time
+            if self.manual_click_index is not None:
+                current_label = self.labels[self.manual_click_index]
+                if current_label == "Ticket ID":
+                    numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
+                    if numeric_text:
+                        self.current_highlighted_text = numeric_text
+                        self.update_input_box(current_label, self.current_highlighted_text)
                 else:
-                    self.current_box_index += 1
+                    self.update_input_box(current_label, self.current_highlighted_text)
+                self.manual_click_index = None
+            else:
+                for i, label in enumerate(self.labels):
+                    if i == 2:  # Skip Ban Time
+                        continue
+                    if not self.input_boxes[label].get().strip():
+                        current_label = label
+                        if current_label == "Ticket ID":
+                            numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
+                            if numeric_text:
+                                self.update_input_box(current_label, numeric_text)
+                        else:
+                            self.update_input_box(current_label, self.current_highlighted_text)
+                        break
 
-            if self.current_box_index >= len(self.labels):
-                self.running = False
-                self.refresh_button.config(state=tk.NORMAL)
-                self.update_big_box()
+            self.update_big_box()
 
     def update_big_box(self):
         concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
@@ -325,7 +325,7 @@ class Overlay:
         widget = event.widget
         for label, entry in self.input_boxes.items():
             if entry == widget:
-                self.current_box_index = self.labels.index(label)
+                self.manual_click_index = self.labels.index(label)
                 break
 
 # Create the main window
