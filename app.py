@@ -29,7 +29,7 @@ class Overlay:
         self.title_label = tk.Label(self.container, text="Purple RP Ticket Assistant", bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
         self.title_label.pack(pady=(10, 0))
 
-        self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick", bg='#641d77', fg='white', font=("Helvetica", 10))
+        self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick or highlight text", bg='#641d77', fg='white', font=("Helvetica", 10))
         self.description_label.pack(pady=(0, 20))
 
         # Input boxes with labels
@@ -67,6 +67,8 @@ class Overlay:
         self.running = True
 
         self.current_highlighted_text = ""
+        self.start_pos = None
+        self.end_pos = None
 
         # Buttons under the big box
         self.lookup_buttons_frame = tk.Frame(self.container, bg='#641d77')
@@ -77,6 +79,15 @@ class Overlay:
 
         self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server logs lookup", bg='#4a1a77', fg='white', command=self.server_logs_lookup)
         self.server_logs_button.pack(side=tk.LEFT, padx=20)
+
+        # New buttons for specific text
+        self.extra_buttons_frame = tk.Frame(self.container, bg='#641d77')
+        self.extra_buttons_frame.pack(pady=(5, 20))
+
+        self.create_extra_button("Handled")
+        self.create_extra_button("Empty Ticket")
+        self.create_extra_button("Insufficient Evidence")
+        self.create_extra_button("Provided video have no context")
 
         # Image
         self.image = tk.PhotoImage(file=r'C:\Users\user\Downloads\DiscordTicketHandler\app\image.png')
@@ -92,7 +103,7 @@ class Overlay:
         self.version_label.pack(side=tk.BOTTOM, pady=(0, 10))
 
         # Start the global mouse listener
-        self.listener = mouse.Listener(on_click=self.on_click)
+        self.listener = mouse.Listener(on_click=self.on_click, on_move=self.on_move, on_release=self.on_release)
         self.listener.start()
 
         self.update_overlay()
@@ -192,8 +203,22 @@ class Overlay:
 
     def on_click(self, x, y, button, pressed):
         if pressed and self.running:
-            print(f"Mouse clicked at ({x}, {y})")
-            self.process_click(x, y)
+            if button == mouse.Button.left:
+                print(f"Mouse clicked at ({x}, {y})")
+                self.process_click(x, y)
+            elif button == mouse.Button.right:
+                self.start_pos = (x, y)
+
+    def on_move(self, x, y):
+        if self.start_pos:
+            self.end_pos = (x, y)
+
+    def on_release(self, x, y, button):
+        if self.start_pos and self.end_pos and button == mouse.Button.right:
+            print(f"Mouse drag from {self.start_pos} to {self.end_pos}")
+            self.process_highlight(self.start_pos, self.end_pos)
+            self.start_pos = None
+            self.end_pos = None
 
     def process_click(self, x, y):
         width, height = 200, 100
@@ -229,8 +254,7 @@ class Overlay:
                 if current_label == "Ticket ID":
                     numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
                     if numeric_text:
-                        self.current_highlighted_text = numeric_text
-                        self.update_input_box(current_label, self.current_highlighted_text)
+                        self.update_input_box(current_label, numeric_text)
                 else:
                     self.update_input_box(current_label, self.current_highlighted_text)
                 self.manual_click_index = None
@@ -250,22 +274,79 @@ class Overlay:
 
             self.update_big_box()
 
-    def update_big_box(self):
-        concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
-        if self.ban_time_unit_var.get() == "Perm":
-            ban_time_text = "Perm"
+    def process_highlight(self, start_pos, end_pos):
+        left = min(start_pos[0], end_pos[0])
+        top = min(start_pos[1], end_pos[1])
+        right = max(start_pos[0], end_pos[0])
+        bottom = max(start_pos[1], end_pos[1])
+
+        region = (left, top, right, bottom)
+
+        print(f"Capturing region: {region}")
+
+        screen = self.capture_screen(region)
+        if screen is None:
+            return
+
+        data = self.extract_text_boxes_from_image(screen)
+        if data:
+            highlighted_texts = [data['text'][i] for i in range(len(data['text'])) if data['text'][i].strip()]
+            self.current_highlighted_text = ' '.join(highlighted_texts)
         else:
-            ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
-        concatenated_text = concatenated_text.replace("\nBan Time", f"\n{ban_time_text}\nBan Time")
-        self.big_input_box.delete(1.0, tk.END)
-        self.big_input_box.insert(tk.END, concatenated_text)
-        pyperclip.copy(concatenated_text)
+            self.current_highlighted_text = ""
+
+        if self.current_highlighted_text:
+            print(f"Storing highlighted text: {self.current_highlighted_text}")
+            if self.manual_click_index is not None:
+                current_label = self.labels[self.manual_click_index]
+                if current_label == "Ticket ID":
+                    numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
+                    if numeric_text:
+                        self.update_input_box(current_label, numeric_text)
+                else:
+                    self.update_input_box(current_label, self.current_highlighted_text)
+                self.manual_click_index = None
+            else:
+                for i, label in enumerate(self.labels):
+                    if i == 2:  # Skip Ban Time
+                        continue
+                    if not self.input_boxes[label].get().strip():
+                        current_label = label
+                        if current_label == "Ticket ID":
+                            numeric_text = re.sub(r'\D', '', self.current_highlighted_text)
+                            if numeric_text:
+                                self.update_input_box(current_label, numeric_text)
+                        else:
+                            self.update_input_box(current_label, self.current_highlighted_text)
+                        break
+
+            self.update_big_box()
+
+    def update_big_box(self, text=None):
+        if text is not None:
+            self.big_input_box.delete(1.0, tk.END)
+            self.big_input_box.insert(tk.END, text)
+            pyperclip.copy(text)
+        else:
+            concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
+            if self.ban_time_unit_var.get() == "Perm":
+                ban_time_text = "Perm"
+            else:
+                ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
+            concatenated_text = concatenated_text.replace("\nBan Time", f"\n{ban_time_text}\nBan Time")
+            self.big_input_box.delete(1.0, tk.END)
+            self.big_input_box.insert(tk.END, concatenated_text)
+            pyperclip.copy(concatenated_text)
 
     def copy_to_clipboard(self):
         concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
         self.big_input_box.delete(1.0, tk.END)
         self.big_input_box.insert(tk.END, concatenated_text + "\n")
         pyperclip.copy(concatenated_text)  # Copy the concatenated text to the clipboard
+
+    def create_extra_button(self, text):
+        button = tk.Button(self.extra_buttons_frame, text=text, command=lambda t=text: self.update_big_box(t), bg='#A98BC4', fg='white')
+        button.pack(side=tk.LEFT, padx=5)
 
     def update_overlay(self):
         if not self.running:
@@ -310,16 +391,12 @@ class Overlay:
     def past_punishments_lookup(self):
         user_name = self.input_boxes[self.labels[0]].get().strip()
         result = f"in:#punishment-request {user_name}"
-        self.big_input_box.delete(1.0, tk.END)
-        self.big_input_box.insert(tk.END, result)
-        pyperclip.copy(result)
+        self.update_big_box(result)
 
     def server_logs_lookup(self):
         user_name = self.input_boxes[self.labels[0]].get().strip()
         result = f"in:#server-logs-shack {user_name}"
-        self.big_input_box.delete(1.0, tk.END)
-        self.big_input_box.insert(tk.END, result)
-        pyperclip.copy(result)
+        self.update_big_box(result)
 
     def on_entry_click(self, event):
         widget = event.widget
