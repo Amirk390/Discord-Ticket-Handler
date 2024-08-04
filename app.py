@@ -26,10 +26,15 @@ class Overlay:
         self.container.pack(expand=True, fill=tk.BOTH)
 
         # Title and description
-        self.title_label = tk.Label(self.container, text="Purple RP Ticket Assistant", bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
-        self.title_label.pack(pady=(10, 0))
+        title_frame = tk.Frame(self.container, bg='#641d77')
+        title_frame.pack(pady=(10, 0), fill=tk.X)
+        self.title_label = tk.Label(title_frame, text="Purple RP Ticket Assistant", bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
+        self.title_label.pack(side=tk.LEFT, padx=(20, 0))
 
-        self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick or highlight text", bg='#641d77', fg='white', font=("Helvetica", 10))
+        self.help_button = tk.Button(title_frame, text="?", command=self.toggle_manual, bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
+        self.help_button.pack(side=tk.RIGHT, padx=(0, 20))
+
+        self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick", bg='#641d77', fg='white', font=("Helvetica", 10))
         self.description_label.pack(pady=(0, 20))
 
         # Input boxes with labels
@@ -67,8 +72,6 @@ class Overlay:
         self.running = True
 
         self.current_highlighted_text = ""
-        self.start_pos = None
-        self.end_pos = None
 
         # Buttons under the big box
         self.lookup_buttons_frame = tk.Frame(self.container, bg='#641d77')
@@ -102,8 +105,11 @@ class Overlay:
         self.version_label = tk.Label(self.container, text="Version 2.00365b", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
         self.version_label.pack(side=tk.BOTTOM, pady=(0, 10))
 
+        # Manual window
+        self.manual_window = None
+
         # Start the global mouse listener
-        self.listener = mouse.Listener(on_click=self.on_click, on_move=self.on_move, on_release=self.on_release)
+        self.listener = mouse.Listener(on_click=self.on_click)
         self.listener.start()
 
         self.update_overlay()
@@ -324,10 +330,9 @@ class Overlay:
 
     def update_big_box(self, text=None):
         if text is not None:
-            text_with_period = text.lower().capitalize() + "."
             self.big_input_box.delete(1.0, tk.END)
-            self.big_input_box.insert(tk.END, text_with_period)
-            pyperclip.copy(text_with_period)
+            self.big_input_box.insert(tk.END, text + ".")
+            pyperclip.copy(text + ".")
         else:
             concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
             if self.ban_time_unit_var.get() == "Perm":
@@ -346,8 +351,7 @@ class Overlay:
         pyperclip.copy(concatenated_text)  # Copy the concatenated text to the clipboard
 
     def create_extra_button(self, text):
-        text_capitalized = text.lower().capitalize()
-        button = tk.Button(self.extra_buttons_frame, text=text_capitalized, command=lambda t=text_capitalized: self.update_big_box(t), bg='#A98BC4', fg='white')
+        button = tk.Button(self.extra_buttons_frame, text=text, command=lambda t=text: self.update_big_box(t), bg='#A98BC4', fg='white')
         button.pack(side=tk.LEFT, padx=5)
 
     def update_overlay(self):
@@ -406,6 +410,32 @@ class Overlay:
             if entry == widget:
                 self.manual_click_index = self.labels.index(label)
                 break
+
+    def toggle_manual(self):
+        if self.manual_window is None or not self.manual_window.winfo_exists():
+            self.manual_window = tk.Toplevel(self.root)
+            self.manual_window.title("Manual")
+            self.manual_window.geometry("400x300")
+            self.manual_window.configure(bg='#424242')
+            self.manual_text = tk.Text(self.manual_window, bg='#424242', fg='white', font=("Helvetica", 10), wrap=tk.WORD)
+            self.manual_text.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+            self.manual_text.insert(tk.END, self.get_manual_text())
+            self.manual_text.configure(state=tk.DISABLED)
+        else:
+            self.manual_window.destroy()
+
+    def get_manual_text(self):
+        return (
+            "Purple RP Ticket Assistant - User Manual\n\n"
+            "Instructions:\n"
+            "1. Click on text to place it in the appropriate input box.\n"
+            "2. Click on an input box first to place text there.\n"
+            "3. Four input boxes for User Name, Reason, Ban Time, and Ticket ID.\n"
+            "4. Select ban time duration and units from the dropdown menu.\n"
+            "5. Click on response buttons to insert the text into the big input box and copy it to the clipboard.\n"
+            "6. Refresh the concatenated text in the big input box.\n"
+            "7. Clear all input boxes and reset the form.\n"
+        )
 
 # Create the main window
 root = tk.Tk()
