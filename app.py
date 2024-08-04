@@ -71,15 +71,18 @@ class Overlay:
         self.lookup_buttons_frame = tk.Frame(self.container, bg='#641d77')
         self.lookup_buttons_frame.pack(pady=(5, 20))
 
-        self.past_punishments_button = tk.Button(self.lookup_buttons_frame, text="Past punishments lookup", bg='#ffd67f', fg='black', command=self.past_punishments_lookup)
+        self.past_punishments_button = tk.Button(self.lookup_buttons_frame, text="Past punishments lookup", bg='#4a1a77', fg='white', command=self.past_punishments_lookup)
         self.past_punishments_button.pack(side=tk.LEFT, padx=20)
 
-        self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server logs lookup", bg='#ffd67f', fg='black', command=self.server_logs_lookup)
+        self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server logs lookup", bg='#4a1a77', fg='white', command=self.server_logs_lookup)
         self.server_logs_button.pack(side=tk.LEFT, padx=20)
 
         # Footer text
         self.footer_label = tk.Label(self.container, text="This program has been created by TotalStrike for Purple RP community", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
         self.footer_label.pack(side=tk.BOTTOM, pady=(0, 10))
+
+        self.version_label = tk.Label(self.container, text="Version 1.0", bg='#641d77', fg='white', font=("Helvetica", 8))
+        self.version_label.pack(side=tk.BOTTOM, pady=(0, 5))
 
         # Start the global mouse listener
         self.listener = mouse.Listener(on_click=self.on_click)
