@@ -14,18 +14,22 @@ class Overlay:
         self.root = root
         self.root.title("Purple RP Ticket Handler")
         self.root.geometry("500x800")  # Adjusted to fit the layout
-        self.root.configure(bg='white')
+        self.root.configure(bg='#641d77')
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
 
+        # Set the icon
+        self.icon = tk.PhotoImage(file=r'C:\Users\user\Downloads\DiscordTicketHandler\app\image.png')  # Update with your icon path
+        self.root.iconphoto(True, self.icon)
+
         # Center align everything
-        self.container = tk.Frame(root, bg='white')
+        self.container = tk.Frame(root, bg='#641d77')
         self.container.pack(expand=True, fill=tk.BOTH)
 
         # Title and description
-        self.title_label = tk.Label(self.container, text="Purple RP Ticket Handler", bg='white', font=("Helvetica", 16, "bold"))
+        self.title_label = tk.Label(self.container, text="Purple RP Ticket Handler", bg='#641d77', fg='white', font=("Helvetica", 16, "bold"))
         self.title_label.pack(pady=(10, 0))
 
-        self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick", bg='white', font=("Helvetica", 10))
+        self.description_label = tk.Label(self.container, text="Click on the information (text) you want to pick", bg='#641d77', fg='white', font=("Helvetica", 10))
         self.description_label.pack(pady=(0, 20))
 
         # Input boxes with labels
@@ -33,19 +37,19 @@ class Overlay:
         self.current_box_index = 0
         self.labels = ["User Name", "Reason", "Ban Time", "Ticket ID"]
 
-        self.input_frame = tk.Frame(self.container, bg='white')
+        self.input_frame = tk.Frame(self.container, bg='#641d77')
         self.input_frame.pack(pady=(5, 10))
 
         for label in self.labels:
             self.create_labeled_input(label)
 
         # Add Ban Time options
-        self.ban_time_frame = tk.Frame(self.input_frame, bg='white')
+        self.ban_time_frame = tk.Frame(self.input_frame, bg='#641d77')
         self.ban_time_frame.pack(pady=(5, 10))
         self.create_ban_time_options()
 
         # Add control buttons
-        self.buttons_frame = tk.Frame(self.container, bg='white')
+        self.buttons_frame = tk.Frame(self.container, bg='#641d77')
         self.buttons_frame.pack(pady=(5, 10))
 
         self.stop_button = tk.Button(self.buttons_frame, text="Stop", command=self.toggle_script, bg='red', fg='white')
@@ -65,7 +69,7 @@ class Overlay:
         self.current_highlighted_text = ""
 
         # Buttons under the big box
-        self.lookup_buttons_frame = tk.Frame(self.container, bg='white')
+        self.lookup_buttons_frame = tk.Frame(self.container, bg='#641d77')
         self.lookup_buttons_frame.pack(pady=(5, 20))
 
         self.past_punishments_button = tk.Button(self.lookup_buttons_frame, text="Past punishments Lookup", bg='#ffd67f', fg='black', command=self.past_punishments_lookup)
@@ -75,7 +79,7 @@ class Overlay:
         self.server_logs_button.pack(side=tk.LEFT, padx=20)
 
         # Footer text
-        self.footer_label = tk.Label(self.container, text="This program has been created by TotalStrike for Purple RP community", bg='white', font=("Helvetica", 8), anchor='s')
+        self.footer_label = tk.Label(self.container, text="This program has been created by TotalStrike for Purple RP community", bg='#641d77', fg='white', font=("Helvetica", 8), anchor='s')
         self.footer_label.pack(side=tk.BOTTOM, pady=(0, 10))
 
         # Start the global mouse listener
@@ -85,18 +89,18 @@ class Overlay:
         self.update_overlay()
 
     def create_labeled_input(self, label_text):
-        label = tk.Label(self.input_frame, text=label_text, bg='white', font=("Helvetica", 10, "bold"))
+        label = tk.Label(self.input_frame, text=label_text, bg='#641d77', fg='white', font=("Helvetica", 10, "bold"))
         label.pack()
 
         entry_var = tk.StringVar()
-        entry = tk.Entry(self.input_frame, textvariable=entry_var, bg='#424242', fg='white', font=("Helvetica", 12, "bold"), width=25, justify='center')
+        entry = tk.Entry(self.input_frame, textvariable=entry_var, bg='#A98BC4', fg='white', font=("Helvetica", 12, "bold"), width=25, justify='center')
         entry.pack(pady=(5, 10))
 
         entry.bind("<Button-1>", self.on_entry_click)
         self.input_boxes[label_text] = entry
 
     def create_ban_time_options(self):
-        self.ban_time_label = tk.Label(self.ban_time_frame, text="Ban Time", bg='white', font=("Helvetica", 10, "bold"))
+        self.ban_time_label = tk.Label(self.ban_time_frame, text="Ban Time", bg='#641d77', fg='white', font=("Helvetica", 10, "bold"))
         self.ban_time_label.pack(side=tk.LEFT)
 
         self.ban_time_value_var = tk.StringVar()
@@ -142,7 +146,6 @@ class Overlay:
         centered_text = self.center_align_text(text, width)
         self.input_boxes[label_text].delete(0, tk.END)
         self.input_boxes[label_text].insert(0, centered_text)
-        self.update_big_box()
 
     def reset(self):
         # Clear all input boxes and reset index
