@@ -324,9 +324,10 @@ class Overlay:
 
     def update_big_box(self, text=None):
         if text is not None:
+            text_with_period = text + "."
             self.big_input_box.delete(1.0, tk.END)
-            self.big_input_box.insert(tk.END, text)
-            pyperclip.copy(text)
+            self.big_input_box.insert(tk.END, text_with_period)
+            pyperclip.copy(text_with_period)
         else:
             concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
             if self.ban_time_unit_var.get() == "Perm":
