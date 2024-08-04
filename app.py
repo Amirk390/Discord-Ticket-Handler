@@ -85,8 +85,8 @@ class Overlay:
         self.extra_buttons_frame.pack(pady=(5, 20))
 
         self.create_extra_button("Handled")
-        self.create_extra_button("Empty Ticket")
-        self.create_extra_button("Insufficient Evidence")
+        self.create_extra_button("Empty ticket")
+        self.create_extra_button("Insufficient evidence")
         self.create_extra_button("Provided video have no context")
 
         # Image
@@ -324,7 +324,7 @@ class Overlay:
 
     def update_big_box(self, text=None):
         if text is not None:
-            text_with_period = text + "."
+            text_with_period = text.lower().capitalize() + "."
             self.big_input_box.delete(1.0, tk.END)
             self.big_input_box.insert(tk.END, text_with_period)
             pyperclip.copy(text_with_period)
@@ -346,7 +346,8 @@ class Overlay:
         pyperclip.copy(concatenated_text)  # Copy the concatenated text to the clipboard
 
     def create_extra_button(self, text):
-        button = tk.Button(self.extra_buttons_frame, text=text, command=lambda t=text: self.update_big_box(t), bg='#A98BC4', fg='white')
+        text_capitalized = text.lower().capitalize()
+        button = tk.Button(self.extra_buttons_frame, text=text_capitalized, command=lambda t=text_capitalized: self.update_big_box(t), bg='#A98BC4', fg='white')
         button.pack(side=tk.LEFT, padx=5)
 
     def update_overlay(self):
