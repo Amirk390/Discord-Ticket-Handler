@@ -18,8 +18,7 @@ class Overlay:
         self.root.attributes("-topmost", True)  # Ensure the window stays on top
 
         # Set the icon
-        self.icon = tk.PhotoImage(file=r'C:\Users\user\Downloads\DiscordTicketHandler\app\image.png')  # Update with your icon path
-        self.root.iconphoto(True, self.icon)
+        self.root.iconphoto(True, tk.PhotoImage(file=r'C:\Users\user\Downloads\DiscordTicketHandler\app\image.png'))
 
         # Center align everything
         self.container = tk.Frame(root, bg='#641d77')
@@ -72,10 +71,10 @@ class Overlay:
         self.lookup_buttons_frame = tk.Frame(self.container, bg='#641d77')
         self.lookup_buttons_frame.pack(pady=(5, 20))
 
-        self.past_punishments_button = tk.Button(self.lookup_buttons_frame, text="Past punishments Lookup", bg='#ffd67f', fg='black', command=self.past_punishments_lookup)
+        self.past_punishments_button = tk.Button(self.lookup_buttons_frame, text="Past punishments lookup", bg='#ffd67f', fg='black', command=self.past_punishments_lookup)
         self.past_punishments_button.pack(side=tk.LEFT, padx=20)
 
-        self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server-logs lookup", bg='#ffd67f', fg='black', command=self.server_logs_lookup)
+        self.server_logs_button = tk.Button(self.lookup_buttons_frame, text="Server logs lookup", bg='#ffd67f', fg='black', command=self.server_logs_lookup)
         self.server_logs_button.pack(side=tk.LEFT, padx=20)
 
         # Footer text
@@ -104,27 +103,17 @@ class Overlay:
         self.ban_time_label.pack(side=tk.LEFT)
 
         self.ban_time_value_var = tk.StringVar()
-        self.ban_time_value_var.set("1")
+        self.ban_time_value_var.set("")
         self.ban_time_value_menu = ttk.Combobox(self.ban_time_frame, textvariable=self.ban_time_value_var, values=["1", "2", "3", "4", "5", "6", "7"], width=5)
         self.ban_time_value_menu.pack(side=tk.LEFT, padx=5)
-        self.ban_time_value_menu.bind("<<ComboboxSelected>>", self.update_ban_time_input)
 
         self.ban_time_unit_var = tk.StringVar()
-        self.ban_time_unit_var.set("Days")
+        self.ban_time_unit_var.set("")
         self.ban_time_unit_menu = ttk.Combobox(self.ban_time_frame, textvariable=self.ban_time_unit_var, values=["Days", "Weeks", "Month", "Perm"], width=10)
         self.ban_time_unit_menu.pack(side=tk.LEFT, padx=5)
-        self.ban_time_unit_menu.bind("<<ComboboxSelected>>", self.update_ban_time_input)
 
-        self.ban_time_unit_var.trace("w", self.on_ban_time_unit_change)
-
-    def on_ban_time_unit_change(self, *args):
-        if self.ban_time_unit_var.get() == "Perm":
-            self.ban_time_value_menu.config(state=tk.DISABLED)
-        else:
-            self.ban_time_value_menu.config(state=tk.NORMAL)
-
-        # Update Ban Time input box with selected values
-        self.update_ban_time_input()
+        self.ban_time_value_var.trace("w", self.update_ban_time_input)
+        self.ban_time_unit_var.trace("w", self.update_ban_time_input)
 
     def update_ban_time_input(self, *args):
         if self.ban_time_unit_var.get() == "Perm":
@@ -156,7 +145,8 @@ class Overlay:
         self.running = True
         self.stop_button.config(text="Stop", bg='red')
         self.stop_button.config(state=tk.NORMAL)
-        self.update_ban_time_input()
+        self.ban_time_value_var.set("")
+        self.ban_time_unit_var.set("")
 
     def capture_screen(self, region):
         try:
@@ -245,6 +235,11 @@ class Overlay:
 
     def update_big_box(self):
         concatenated_text = '\n'.join(self.input_boxes[label].get().strip() for label in self.labels if self.input_boxes[label].get().strip())
+        if self.ban_time_unit_var.get() == "Perm":
+            ban_time_text = "Perm"
+        else:
+            ban_time_text = f"{self.ban_time_value_var.get()} {self.ban_time_unit_var.get()}"
+        concatenated_text = concatenated_text.replace("\nBan Time", f"\n{ban_time_text}\nBan Time")
         self.big_input_box.delete(1.0, tk.END)
         self.big_input_box.insert(tk.END, concatenated_text)
         pyperclip.copy(concatenated_text)
