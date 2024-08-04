@@ -114,15 +114,25 @@ class Overlay:
         self.listener.start()
 
     def create_labeled_input(self, label_text):
-        label = tk.Label(self.input_frame, text=label_text, bg='#641d77', fg='white', font=("Helvetica", 10, "bold"))
-        label.pack()
+        frame = tk.Frame(self.input_frame, bg='#641d77')
+        frame.pack(pady=(5, 10), fill=tk.X)
+
+        label = tk.Label(frame, text=label_text, bg='#641d77', fg='white', font=("Helvetica", 10, "bold"))
+        label.pack(side=tk.LEFT)
 
         entry_var = tk.StringVar()
-        entry = tk.Entry(self.input_frame, textvariable=entry_var, bg='#A98BC4', fg='white', font=("Helvetica", 12, "bold"), width=25, justify='center')
-        entry.pack(pady=(5, 10))
+        entry = tk.Entry(frame, textvariable=entry_var, bg='#A98BC4', fg='white', font=("Helvetica", 12, "bold"), width=25, justify='center')
+        entry.pack(side=tk.LEFT, padx=5)
+
+        if label_text == "User Name":
+            add_button = tk.Button(frame, text="+", command=self.add_user_name_input, bg='#A98BC4', fg='white', font=("Helvetica", 10, "bold"))
+            add_button.pack(side=tk.LEFT, padx=5)
 
         entry.bind("<Button-1>", self.on_entry_click)
         self.input_boxes[label_text] = entry
+
+    def add_user_name_input(self):
+        pass  # Placeholder for the functionality to be added
 
     def create_ban_time_options(self):
         self.ban_time_label = tk.Label(self.ban_time_frame, text="Ban Time", bg='#641d77', fg='white', font=("Helvetica", 10, "bold"))
