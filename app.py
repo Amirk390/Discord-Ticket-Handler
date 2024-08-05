@@ -113,6 +113,9 @@ class Overlay:
         self.listener = mouse.Listener(on_click=self.on_click)
         self.listener.start()
 
+        # Bind the Esc key
+        self.root.bind('<Escape>', self.cancel_manual_input)
+
     def create_labeled_input(self, label_text):
         frame = tk.Frame(self.input_frame, bg='#641d77')
         frame.pack(pady=(5, 10), fill=tk.X)
@@ -328,6 +331,9 @@ class Overlay:
             "6. Refresh the concatenated text in the big input box.\n"
             "7. Clear all input boxes and reset the form.\n"
         )
+
+    def cancel_manual_input(self, event):
+        self.manual_click_index = None
 
     def past_punishments_lookup(self):
         user_name = self.input_boxes[self.labels[0]].get().strip()
